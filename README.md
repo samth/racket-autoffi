@@ -59,3 +59,5 @@ $ racket main.rkt
 3
 ```
 
+That's it! Programs can in theory get as complex as the [NCurses](https://www.gnu.org/software/ncurses/) library, we're working on making that a reality. If you found a bug or wish to contribute, please [file an issue](http://githu.com/samvv/racket-autoffi/issues/new).
+
