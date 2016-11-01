@@ -35,10 +35,10 @@ $ hexdump myprog.dylib
 ...
 ```
 
-The binary does not contain enough information to link to it. We need to add the missing information with the following command:
+The binary does not contain enough information to link to it. We need to add the missing information with the following command from [this project](http://github.com/samvv/Transit):
 
 ```bash
-$ trans -json myprog.c > myprog.json
+$ transc -json myprog.c > myprog.json
 ```
 
 Importing this binary in Racket now requires only two lines of code. No need to
