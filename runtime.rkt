@@ -1,0 +1,43 @@
+#lang racket
+
+(require ffi/unsafe "parse.rkt")
+
+(define (transit-type->ctype tt)
+  (cond
+    ((variadic-array-type? tt)
+     'todo)
+    ((fixed-array-type? tt)
+     'todo)
+    ((function-type? tt)
+     (_cprocedure (map transit-type->ctype (function-type-param-types tt)) (transit-type->ctype (function-type-result-type tt))))
+    ((primitive-type? tt)
+     (define kind-id (primitive-type-id tt))
+     (case kind-id
+      ((char) _int8)
+      ((schar) _sint8)
+      ((uchar) _uint8)
+      ((short) _int16)
+      ((sshort) _sint16)
+      ((ushort) _uint16)
+      ((int) _int32)
+      ((sint) _sint32)
+      ((uint) _uint32)
+      ((long) _long)
+      ((ulong) _ulong)
+      ((slong) _slong)
+      ((llong) _llong)
+      ((ullong) _ullong)
+      ((sllong) _sllong)
+      ((bool) _stdbool)
+      ((void) _void)
+      (else (error 'transit-type->ctype "could not convert primitive type: unrecorgnised id ~a" kind-id))))))
+
+(define (load name)
+  (define exports (load-catalog name))
+  (define lib (ffi-lib name))
+  (foldl (lambda (export-name h)
+           (define export-type (hash-ref exports export-name))
+           (hash-set h export-name (get-ffi-obj export-name lib (transit-type->ctype export-type))))
+         (hash)
+         (hash-keys exports)))
+
