@@ -1,0 +1,1 @@
+{"type":[{"id":1,"kind":"FUNCTION","returnType":2,"paramType":[2,2]},{"id":2,"kind":"PRIMITIVE","primitiveKind":"Float"}],"export":[{"name":"add","type":1}]}
