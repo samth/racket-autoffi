@@ -3,6 +3,12 @@ Racket AutoFFI
 
 This is the Racket binding generator built on top of [AutoFFI](https://github.com/AutoFFI/AutoFFI).
 
+## Installation
+
+```
+raco pkg install https://github.com/AutoFFI/racket-autoffi.git
+```
+
 ## Getting Started
 
 This is a very basic example showing what AutoFFI is capable of doing.
