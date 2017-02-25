@@ -1,5 +1,2 @@
 #lang racket
 
-(provide enum)
-
-
