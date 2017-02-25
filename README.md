@@ -43,7 +43,7 @@ $ affc myprog.c > myprog.json
 ```
 
 Importing this binary in Racket now requires only two lines of code. No need to
-define complex FFI structures!;
+define complex FFI structures!
 
 **main.rkt**
 ```racket;
