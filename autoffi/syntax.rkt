@@ -42,7 +42,6 @@
        (define transformed (make-hash))
        (define (transform-type tt)
          (define id (datum->syntax #'name (syntax-e (format-id #'name "_~a" (generate-temporary)))))
-         (display tt)(newline)
          (hash-set! transformed tt id)
          (cond
            ((primitive-type? tt)
@@ -69,8 +68,7 @@
            ((pointer-type? tt)
             ; TODO: make typed pointers
             #`(define #,id _pointer))
-           (else (error 'require/foreign "unknown transit type ~a" tt))))
-      (display types)
+           (else (error 'require/foreign "unknown autoffi type ~a" tt))))
     (let ((type-defs (map transform-type types)))
       (with-syntax ([proc-names (datum->syntax #'name (map string->symbol function-export-names))]
                     [proc-defs 

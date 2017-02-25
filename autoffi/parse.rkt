@@ -1,6 +1,6 @@
 #lang racket
 
-(require json)
+(require json data/ddict)
 
 (provide load-catalog
          catalog
@@ -34,10 +34,10 @@
          variadic-array-type
          variadic-array-type?)
 
-(struct catalog (type-hash export-hash))
+(struct catalog (type-ddict export-hash))
 
 (define (catalog-types c)
-  (hash-values (catalog-type-hash c)))
+  (reverse (ddict-values (catalog-type-ddict c))))
 
 (struct type ())
 (struct primitive-type type (id))
@@ -55,7 +55,7 @@
 (define (load-catalog name)
   (parse-catalog (read-json (open-input-file (string-append name ".json")))))
 
-(define empty-catalog (hash))
+(define empty-catalog (catalog (ddict) (make-hash)))
 
 (define (hash-get h k)
   (and (hash-has-key? h k)
@@ -66,21 +66,19 @@
   (define type-list (hash-ref json-like 'type))
   (define exports (hash-ref json-like 'export))
 
-  #|(define pre-type-hash|#
+  #|(define pre-type-ddict|#
     #|(foldl (lambda (type-spec h)|#
              #|(define type-id (hash-ref type-spec 'id))|#
              #|(hash-set h type-id type-spec))|#
            #|(hash)|#
            #|type-list))|#
 
-  (define (type-folder type-spec h)
+  (define (type-folder type-spec dd)
 
     (define type-id (hash-ref type-spec 'id));
-    (display type-id)(newline)
 
     (define (get-type-by-id id)
-      (display "request ")(display id)(newline)
-      (hash-ref h id))
+      (ddict-ref dd id))
 
     (define (get-fields type-spec)
       (foldl (lambda (field-spec h)
@@ -144,16 +142,16 @@
        (("QUALIFIED")
         (get-type-by-id (hash-ref type-spec 'underlyingType))) ; drops qualifiers
        (else (error 'parse-catalog "could not parse type spec for ~a: ~a" type-id (hash-ref type-spec 'kind)))))
-    (hash-set h type-id parsed-type))
-  (define type-hash
-    (foldl type-folder (hash) (reverse type-list)))
+    (ddict-set dd type-id parsed-type))
+  (define type-ddict
+    (foldl type-folder (ddict) type-list))
   (define export-hash
     (foldl (lambda (export-spec h)
              (define export-name (hash-ref export-spec 'name))
              (define export-type-id (hash-ref export-spec 'type))
-             (hash-set h export-name (hash-ref type-hash export-type-id)))
+             (hash-set h export-name (ddict-ref type-ddict export-type-id)))
            (hash)
            exports))
 
-  (catalog type-hash export-hash))
+  (catalog type-ddict export-hash))
 
