@@ -39,7 +39,7 @@ the missing type information. In order to do this, we need our
 [AutoFFI tool](http://github.com/AutoFFI/AutoFFI):
 
 ```bash
-$ transc -json myprog.c > myprog.json
+$ affc myprog.c > myprog.json
 ```
 
 Importing this binary in Racket now requires only two lines of code. No need to
