@@ -92,7 +92,7 @@
      (case (hash-ref type-spec 'kind)
        (("FUNCTION") 
         (define result-type-id (hash-ref type-spec 'returnType))
-        (define params (map get-type-by-id (hash-ref type-spec 'paramType)))
+        (define params (map get-type-by-id (or (hash-get type-spec 'paramType) '())))
         (function-type (get-type-by-id result-type-id) params))
        (("POINTER")
         (if (hash-get type-spec 'isBlockPointer)
