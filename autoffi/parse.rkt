@@ -8,6 +8,7 @@
          catalog-types
          catalog-export-hash
          empty-catalog
+         find-export-with-type
          
          type
          cyclic-record-type?
@@ -42,6 +43,14 @@
 (define (catalog-types c)
   (reverse (ddict-values (catalog-type-ddict c))))
 
+(define (find-export-with-type c tt)
+  (define h (catalog-export-hash c))
+  (define candidates
+    (filter (lambda (export-name)
+              (eq? (hash-ref h export-name) tt))
+            (hash-keys h)))
+  (and (> (length candidates) 0) (first candidates)))
+
 (struct type ())
 (struct primitive-type type (id))
 (struct function-type type ([result-type #:mutable] [param-types #:mutable]))
@@ -54,52 +63,6 @@
 (struct variadic-array-type array-type ())
 (struct pointer-type type ([referenced-type #:mutable]))
 (struct block-pointer-type pointer-type ())
-
-;; Checks to see if a type contains itself
-;; without going into infinite recursion
-;(define (contains-self? tt)
-  ;(define visited (mutable-set))
-  ;(let has-self? ((tt tt))
-    ;(or (set-member? visited tt)
-        ;(begin 
-          ;(set-add! visited tt)
-          ;(cond
-            ;((or (enum-type? tt)
-                 ;(primitive-type? tt))
-             ;#f)
-            ;((function-type? tt)
-             ;(or (find-self (function-type-result-type tt))
-                 ;(ormap find-self (function-type-param-types tt))))
-            ;((record-type? tt)
-             ;(ormap find-self (hash-values (record-type-fields tt))))
-            ;((array-type? tt)
-             ;(find-self (array-type-element-type tt)))
-            ;((pointer-type? tt)
-             ;(find-self (pointer-type-referenced-type tt)))
-            ;(else (error 'cyclic-type? "unrecognised type ~a" tt)))))))
-
-
-;(define (cyclic-type? tt)
-  ;(define visited (mutable-set))
-  ;(let has-cycle? ((tt tt))
-    ;(and (not (set-member? visited))
-      ;(cond
-        ;((or (enum-type? tt)
-             ;(primitive-type? tt))
-         ;#f)
-        ;((function-type? tt)
-         ;(or (has-cycle? (function-type-result-type tt))
-             ;(ormap has-cycle? (function-type-param-types tt))))
-        ;((record-type? tt)
-         ;(define field-types (hash-values (record-type-fields tt)))
-         ;(or (ormap find-self field-types)
-             ;(ormap has-cycle? field-types)))
-
-        ;((array-type? tt)
-         ;(find-self (array-type-element-type tt)))
-        ;((pointer-type? tt)
-         ;(find-self (pointer-type-referenced-type tt)))
-        ;(else (error 'cyclic-type? "unrecognised type ~a" tt)))))
 
 (define (cyclic-record-type? rt)
   (define (has-rt? tt)

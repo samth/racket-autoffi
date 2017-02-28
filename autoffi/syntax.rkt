@@ -3,6 +3,7 @@
 (require ffi/unsafe
          (for-syntax 
            racket/syntax
+           racket/list
            syntax/srcloc
            "parse.rkt"))
 
@@ -41,13 +42,24 @@
 
   )
 
+(define-syntax (cstruct-alias stx)
+  (syntax-case stx ()
+    [(_ name orig (field-name ...))
+     #`(begin
+         #,@(map (lambda (field-name) 
+                   #`(define #,(format-id field-name "~a-~a" (substring (syntax-e #'name) 1) (syntax-e field-name))
+                             #,(format-id field-name "~a-~a" (substring (symbol->string (syntax-e #'orig)) 1) (syntax-e field-name)))) 
+                 (syntax-e #'(field-name ...)))
+
+         'done)]))
+
 (define-syntax (require/foreign stx)
   (syntax-case stx ()
     [(_ name)
      (string? (syntax-e #'name))
      (let* ((catalog (load-catalog (string-append (path->string (dirname (source-location-source #'name))) (syntax-e #'name))))
             (export-hash (catalog-export-hash catalog))
-            (types (catalog-types catalog)))
+            (types (remove-duplicates (catalog-types catalog))))
 
        (define function-export-names (filter (lambda (proc-name) (function-type? (hash-ref export-hash proc-name))) (hash-keys export-hash)))
 
@@ -61,31 +73,49 @@
               '()
               (list* (string->symbol (car symbols)) '= (hash-ref h (car symbols)) (loop (cdr symbols))))))
 
+       (define (generate-id)
+         (datum->syntax #'name (syntax-e (format-id #'name "_~a" (generate-temporary)))))
+
        (define (transform-type tt)
-         (define id (datum->syntax #'name (syntax-e (format-id #'name "_~a" (generate-temporary)))))
-         (hash-set! transformed tt id)
          (cond
            ((primitive-type? tt)
+            (define id (generate-id))
+            (hash-set! transformed tt id)
             #`(define #,id #,(tt-prim-kind->ffi-prim-kind (primitive-type-id tt))))
            ((function-type? tt)
+            (define id (generate-id))
+            (hash-set! transformed tt id)
             #`(define #,id (_cprocedure (list #,@(map (lambda (param-type) (hash-ref transformed param-type)) (function-type-param-types tt)))
                            #,(hash-ref transformed (function-type-result-type tt)))))
            ((struct-type? tt)
             (if (and (not (cyclic-record-type? tt)) (> (record-type-field-count tt) 0))
-              (let ((fields (record-type-fields tt)))
-                #`(define-cstruct #,id
-                          #,(map (lambda (field-name)
-                                    (define field-type (hash-ref fields field-name))
-                                    #`[#,(string->symbol field-name) #,(hash-ref transformed field-type)])
-                              (hash-keys fields))))
-              #`(define #,id (_cpointer '#,id))))
+              (let* ((export-name (find-export-with-type catalog tt))
+                    (id (datum->syntax #'name (if export-name (string->symbol (string-append "_" export-name)) (generate-id))))
+                    (fields (record-type-fields tt)))
+                    (hash-set! transformed tt id)
+                  #`(define-cstruct #,id
+                            #,(map (lambda (field-name)
+                                      (define field-type (hash-ref fields field-name))
+                                      #`[#,(string->symbol field-name) #,(hash-ref transformed field-type)])
+                                   (hash-keys fields))))
+              (let ((id (generate-id)))
+                (hash-set! transformed tt id)
+                #`(define #,id (_cpointer '#,id)))))
            ((union-type? tt)
+            (define id (generate-id))
+            (hash-set! transformed tt id)
             #`(define #,id (_cpointer '#,id)))
            ((enum-type? tt)
+            (define id (generate-id))
+            (hash-set! transformed tt id)
             #`(define #,id (_enum '#,(get-enum-symbols (enum-type-values tt)))))
            ((array-type? tt)
+            (define id (generate-id))
+            (hash-set! transformed tt id)
             #`(define #,id _pointer))
            ((pointer-type? tt)
+            (define id (generate-id))
+            (hash-set! transformed tt id)
             ; TODO: make typed pointers
             #`(define #,id _pointer))
            (else (error 'require/foreign "unknown autoffi type ~a" tt))))
