@@ -4,3 +4,4 @@
 (define collection 'multi)
 (define categories '(ffi automatisation code-generation))
 (define version "0.2.0")
+(define compile-omit-paths '("example"))
